@@ -10,7 +10,7 @@ import webbrowser
 from threading import Timer
 
 PORT = 8000
-DIRECTORY = "/home/joe/testapps"
+DIRECTORY = os.path.join(os.path.dirname(__file__), "web")
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
