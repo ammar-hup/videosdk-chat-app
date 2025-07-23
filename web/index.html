@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VideoSDK Web Chat</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎥</text></svg>">
+    <link rel="preload" href="https://sdk.videosdk.live/rtc-js-prebuilt/0.3.33/rtc-js-prebuilt.js" as="script">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -48,8 +49,6 @@
             errorTitle.textContent = title;
             errorMessage.textContent = message;
             errorContainer.style.display = 'block';
-            
-            console.error(`${title}: ${message}`);
         }
         
         // Configuration - replace with your actual values
@@ -63,95 +62,84 @@
         
         // You'll need to generate this token server-side in production
         // Use generate_token.py to create a fresh token
-        const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlrZXkiOiIwN2FiODlmMy0xNTBiLTQ0MmQtOGMwYi03MTExMzNlNjQ3NTMiLCJwZXJtaXNzaW9ucyI6WyJhbGxvd19qb2luIl0sImlhdCI6MTc1MzE3MjAxMywiZXhwIjoxNzUzMjU4NDEzfQ.FIUDTmOUMGVgOqa7zQ4hePZt4_Ouckni84HGzgHvsU4";
-        
-        // Log connection details to help with debugging
-        console.log(`Connection mode: ${isNgrok ? 'Ngrok (Public)' : 'Local'}`);
-        console.log(`User ID: ${USER_ID}, Name: ${NAME}`);
+        const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlrZXkiOiIwN2FiODlmMy0xNTBiLTQ0MmQtOGMwYi03MTExMzNlNjQ3NTMiLCJwZXJtaXNzaW9ucyI6WyJhbGxvd19qb2luIl0sImlhdCI6MTc1MzI1OTAyOCwiZXhwIjoxNzUzMzQ1NDI4fQ.FCxuq9ntykp_Zk5fvclxSoJdewQkL0asMXIVp9Uj2XA";
         
         // Initialize the VideoSDK Prebuilt meeting on page load
         window.addEventListener('load', function() {
             // Check browser compatibility first
-            const checkBrowserSupport = () => {
-                // Check if getUserMedia is supported
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    showError("Browser Not Supported", 
-                            "This browser doesn't support video calls. Please try Chrome, Firefox, or Edge.");
-                    return false;
-                }
-                return true;
-            };
-            
-            if (!checkBrowserSupport()) {
-                return; // Stop if browser doesn't support WebRTC
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showError("Browser Not Supported", 
+                        "This browser doesn't support video calls. Please try Chrome, Firefox, or Edge.");
+                return;
             }
-            
-            const domain = "sdk.videosdk.live";
             
             // Initialize the VideoSDK with default UI
             const meetingConfig = {
                 name: NAME,
-                meetingId: MEETING_ID,
                 apiKey: API_KEY,
+                meetingId: MEETING_ID,
                 
                 containerId: "videoSDKContainer", // The container where VideoSDK will render its UI
-                micEnabled: true,
-                webcamEnabled: true,
+                redirectOnLeave: "https://www.videosdk.live/",
+                
+                micEnabled: false, // Start with mic off
+                webcamEnabled: false, // Start with webcam off
+                
+                // These ensure participants can control their own devices
+                participantCanToggleSelfMic: true,
+                participantCanToggleSelfWebcam: true,
+                participantCanLeave: true,
+                
                 participantId: USER_ID,
                 
                 // Appearance
                 theme: "DARK", // Can be LIGHT or DARK
+                
                 layout: {
                     type: "GRID",   // GRID, SPOTLIGHT or SIDEBAR
                     priority: "SPEAKER", // Pin active speakers
-                    gridSize: 9     // Max participants visible in the grid
+                    gridSize: 2   // Max participants visible in the grid
                 },
                 
                 // Permissions and features
                 permissions: {
                     pin: true,
-                    toggleMic: true,
-                    toggleWebcam: true,
-                    toggleScreenShare: true,
-                    toggleChat: true,
+                    toggleSelfMic: true,
+                    toggleSelfWebcam: true,
                     leaveFromMeeting: true,
+                    toggleParticipantMic: true, // Can toggle other participant's mic
+                    toggleParticipantWebcam: true, // Can toggle other participant's webcam
                 },
                 
                 // Join with optimized settings
                 joinWithoutUserInteraction: true,
                 maxResolution: "hd",
                 debug: true,
-                
                 // Use the token for authentication
                 token: TOKEN,
                 
+                // * consider Adding STUN/TURN servers for better NAT traversal *
                 // Add network configuration to help with connections
                 networkConfig: {
-                    // Add STUN/TURN servers for better NAT traversal
                     iceServers: [
                         {
                             urls: [
-                                "stun:stun.l.google.com:19302",
-                                "stun:stun1.l.google.com:19302"
+                                "stun:stun.l.google.com:19302"
                             ]
                         }
                     ]
-                }
+                },
             };
             
             try {
                 // Request camera/microphone permissions explicitly before initializing
                 navigator.mediaDevices.getUserMedia({ video: true, audio: true })
                     .then(stream => {
-                        console.log("Camera and microphone access granted");
                         // Release the stream immediately, SDK will request it again
                         stream.getTracks().forEach(track => track.stop());
                         
                         // Initialize the meeting with the VideoSDK prebuilt UI
                         const meeting = new VideoSDKMeeting();
-                        
-                        // Add error handling
-                        window.VideoSDKMeeting = meeting; // Save reference globally for debugging
                         
                         // Set up error handler for VideoSDK errors
                         window.addEventListener('error', function(event) {
@@ -164,17 +152,14 @@
                         
                         // Initialize the meeting
                         meeting.init(meetingConfig);
-                        console.log("VideoSDK Meeting initialized");
                     })
                     .catch(err => {
-                        console.error("Error accessing camera/mic:", err);
                         showError("Camera/Microphone Access Denied", 
-                                 "Failed to access your camera or microphone. Please ensure they are connected and you've granted permission to use them.");
+                                  "Failed to access your camera or microphone. Please ensure they are connected and you've granted permission to use them.");
                     });
             } catch (err) {
-                console.error("Error setting up meeting:", err);
                 showError("Meeting Initialization Failed", 
-                         "Failed to initialize the video meeting. Please try a different browser or check your internet connection.");
+                          "Failed to initialize the video meeting. Please try a different browser or check your internet connection.");
             }
         });
     </script>
