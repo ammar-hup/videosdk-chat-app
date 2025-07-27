@@ -13,7 +13,7 @@ import socket
 import urllib.request
 import json
 
-PORT = 8000
+PORT = 8002
 DIRECTORY = os.path.join(os.path.dirname(__file__), "web")
 
 class CORSHandler(http.server.SimpleHTTPRequestHandler):

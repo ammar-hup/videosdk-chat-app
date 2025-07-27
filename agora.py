@@ -15,7 +15,7 @@ load_dotenv()
 APP_ID = os.getenv('AGORA_APP_ID', 'your-api-key-here')
 APP_CERTIFICATE = os.getenv('AGORA_APP_CERTIFICATE', 'your-secret-here')
 CHANNEL_NAME = os.getenv('AGORA_CHANNEL_NAME', 'testChannel')
-PORT = 8001  # Different from VideoSDK port
+PORT = 8000  # Different from VideoSDK port
 
 def generate_agora_token(uid=0):
     current_time = int(time.time())

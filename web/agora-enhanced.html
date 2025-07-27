@@ -45,13 +45,14 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         
+
+
         .video-participant {
             width: 100%;
             height: 100%;
             position: relative;
             overflow: hidden;
         }
-        
         .controls {
             margin-top: 20px;
             padding: 15px;
@@ -59,10 +60,10 @@
             border-radius: 12px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
             gap: 15px;
         }
-        
         .controls button {
             min-width: 120px;
             padding: 10px 15px;
@@ -72,6 +73,26 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            transition: background 0.2s, color 0.2s, border 0.2s;
+        }
+        .controls button.btn-danger {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+        }
+        .controls button.btn-outline-secondary {
+            background: #f8f9fa;
+            color: #343a40;
+            border: 1px solid #ced4da;
+        }
+        .controls button.btn-primary {
+            background: #0d6efd;
+            color: #fff;
+            border: none;
+        }
+        .controls button:disabled {
+            opacity: 0.6;
+            pointer-events: none;
         }
         
         .controls button i {
@@ -225,12 +246,12 @@
         let screenTrack;
         let remoteUsers = {};
         
-        let micEnabled = true;
-        let cameraEnabled = true;
+        let micEnabled = false;
+        let cameraEnabled = false;
         
         // Preview variables
-        let previewMicEnabled = true;
-        let previewCameraEnabled = true;
+        let previewMicEnabled = false;
+        let previewCameraEnabled = false;
         let previewTracks = [];
         
         // Helper function to display errors
@@ -248,7 +269,9 @@
         async function initializePreview() {
             try {
                 previewTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
-                
+                // Set both tracks disabled by default
+                previewTracks[0].setEnabled(false);
+                previewTracks[1].setEnabled(false);
                 const previewPlayer = document.createElement("div");
                 previewPlayer.id = "preview-player";
                 previewPlayer.style.width = "100%";
@@ -257,6 +280,15 @@
                 document.getElementById("preview-container").appendChild(previewPlayer);
                 previewTracks[1].play("preview-player");
                 
+                // Set preview button UI to off state
+                const previewMicBtn = document.getElementById('preview-mic-btn');
+                previewMicBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                previewMicBtn.classList.remove('btn-outline-secondary');
+                previewMicBtn.classList.add('btn-danger');
+                const previewCameraBtn = document.getElementById('preview-camera-btn');
+                previewCameraBtn.innerHTML = '<i class="fas fa-video-slash"></i>';
+                previewCameraBtn.classList.remove('btn-outline-secondary');
+                previewCameraBtn.classList.add('btn-danger');
             } catch (error) {
                 showError("Preview Failed", "Could not access camera or microphone. Please check your permissions.");
             }
@@ -330,23 +362,25 @@
             
             try {
                 await client.join(APP_ID, CHANNEL, TOKEN, null);
+
+                // Add this block to detect already joined users
+                /*client.remoteUsers.forEach(user => {
+                    if (user.hasVideo || user.hasAudio) {
+                        remoteUsers[user.uid] = user;
+                    }
+                });
+                updateWaitingMessage();*/
+
+                
                 
                 // Set initial mic and camera state based on preview
-                micEnabled = previewMicEnabled;
-                cameraEnabled = previewCameraEnabled;
-                
-                // Create tracks with initial states
-                localTracks = await AgoraRTC.createMicrophoneAndCameraTracks(
-                    {}, 
-                    {enabled: cameraEnabled}
-                );
-                
-                // Set audio track enabled state
-                if (!micEnabled) {
-                    localTracks[0].setEnabled(false);
-                    document.getElementById('mic-btn').innerHTML = '<i class="fas fa-microphone-slash"></i> Unmute';
-                }
-                
+                micEnabled = false;
+                cameraEnabled = false;
+                // Create tracks
+                localTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
+                // Set enabled state after creation
+                localTracks[0].setEnabled(false);
+                localTracks[1].setEnabled(false);
                 // Show local video
                 const localPlayer = document.createElement("div");
                 localPlayer.id = "local-player";
@@ -355,19 +389,14 @@
                 document.getElementById("local-video").innerHTML = "";
                 document.getElementById("local-video").appendChild(localPlayer);
                 localTracks[1].play("local-player");
-
                 // Publish local tracks
                 await client.publish(localTracks);
-                
-                // Hide the waiting message once remote user joins
-                document.getElementById("waiting-message").style.display = "block";
-                
                 // Set up user-published event handling
                 client.on("user-published", handleUserPublished);
                 client.on("user-unpublished", handleUserUnpublished);
                 client.on("user-left", handleUserLeft);
-                
                 updateButtonStates();
+                updateWaitingMessage();
             } catch (error) {
                 showError("Connection Error", 
                     "Failed to join the consultation. Please check your connection and try again.");
@@ -445,34 +474,56 @@
         }
         
         function updateButtonStates() {
-            // Update mic button
+            // Mic button
+            const micBtn = document.getElementById('mic-btn');
             if (micEnabled) {
-                document.getElementById('mic-btn').innerHTML = '<i class="fas fa-microphone"></i> Mute';
-                document.getElementById('mic-btn').classList.remove('btn-danger');
-                document.getElementById('mic-btn').classList.add('btn-outline-secondary');
+                micBtn.innerHTML = '<i class="fas fa-microphone"></i> Mute';
+                micBtn.classList.remove('btn-danger');
+                micBtn.classList.add('btn-outline-secondary');
             } else {
-                document.getElementById('mic-btn').innerHTML = '<i class="fas fa-microphone-slash"></i> Unmute';
-                document.getElementById('mic-btn').classList.remove('btn-outline-secondary');
-                document.getElementById('mic-btn').classList.add('btn-danger');
+                micBtn.innerHTML = '<i class="fas fa-microphone-slash"></i> Unmute';
+                micBtn.classList.remove('btn-outline-secondary');
+                micBtn.classList.add('btn-danger');
             }
-            
-            // Update camera button
+
+            // Camera button
+            const cameraBtn = document.getElementById('camera-btn');
             if (cameraEnabled) {
-                document.getElementById('camera-btn').innerHTML = '<i class="fas fa-video"></i> Camera';
-                document.getElementById('camera-btn').classList.remove('btn-danger');
-                document.getElementById('camera-btn').classList.add('btn-outline-secondary');
+                cameraBtn.innerHTML = '<i class="fas fa-video"></i> Camera';
+                cameraBtn.classList.remove('btn-danger');
+                cameraBtn.classList.add('btn-outline-secondary');
             } else {
-                document.getElementById('camera-btn').innerHTML = '<i class="fas fa-video-slash"></i> Camera';
-                document.getElementById('camera-btn').classList.remove('btn-outline-secondary');
-                document.getElementById('camera-btn').classList.add('btn-danger');
+                cameraBtn.innerHTML = '<i class="fas fa-video-slash"></i> Camera Off';
+                cameraBtn.classList.remove('btn-outline-secondary');
+                cameraBtn.classList.add('btn-danger');
+            }
+
+            // Screen share button
+            const screenBtn = document.getElementById('screen-btn');
+            if (screenTrack) {
+                screenBtn.innerHTML = '<i class="fas fa-desktop"></i> Stop Sharing';
+                screenBtn.classList.remove('btn-outline-secondary');
+                screenBtn.classList.add('btn-primary');
+            } else {
+                screenBtn.innerHTML = '<i class="fas fa-desktop"></i> Share Screen';
+                screenBtn.classList.remove('btn-primary');
+                screenBtn.classList.add('btn-outline-secondary');
+            }
+        }
+
+        function updateWaitingMessage() {
+            const waitingMsg = document.getElementById("waiting-message");
+            if (Object.keys(remoteUsers).length > 0) {
+                waitingMsg.style.display = "none";
+            } else {
+                waitingMsg.style.display = "block";
             }
         }
 
         async function handleUserPublished(user, mediaType) {
             await client.subscribe(user, mediaType);
-            
-            // Hide waiting message when remote user joins
-            document.getElementById("waiting-message").style.display = "none";
+            remoteUsers[user.uid] = user;
+            updateWaitingMessage();
             
             if (mediaType === "video") {
                 // Create a div for remote user
@@ -487,8 +538,6 @@
             if (mediaType === "audio") {
                 user.audioTrack.play();
             }
-            
-            remoteUsers[user.uid] = user;
         }
 
         function handleUserUnpublished(user, mediaType) {
@@ -498,6 +547,7 @@
                     playerToRemove.remove();
                 }
             }
+            updateWaitingMessage();
         }
         
         function handleUserLeft(user) {
@@ -507,10 +557,7 @@
                 playerToRemove.remove();
             }
             
-            // Show waiting message if no remote users
-            if (Object.keys(remoteUsers).length === 0) {
-                document.getElementById("waiting-message").style.display = "block";
-            }
+            updateWaitingMessage();
         }
     </script>
 </body>
