@@ -80,17 +80,54 @@
             z-index: 100;
         }
         
+        /* Base button styles for all screen sizes */
         .controls button {
-            min-width: 120px;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-weight: 500;
+            width: 60px;
+            height: 60px;
+            min-width: 60px;
+            padding: 0;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            transition: background 0.2s, color 0.2s, border 0.2s;
+            margin: 0 5px;
+            transition: all 0.2s ease;
         }
+        
+        /* Only override what's needed for medium screens */
+        @media (max-width: 768px) {
+            .controls {
+                padding: 10px;
+                gap: 8px;
+                margin-top: 10px;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                border-radius: 12px 12px 0 0;
+                background-color: rgba(255, 255, 255, 0.95);
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            }
+            
+            .controls button i {
+                font-size: 1.5rem;
+            }
+        }
+        
+        /* Only override what's needed for small screens */
+        @media (max-width: 480px) {
+            .controls {
+                padding: 15px 10px 25px;
+                justify-content: space-around;
+                background-color: rgba(255, 255, 255, 0.98);
+                box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+            }
+            
+            .controls button span {
+                display: none;
+            }
+        }
+
         .controls button.btn-danger {
             background: #dc3545;
             color: #fff;
@@ -112,10 +149,11 @@
         }
         
         .controls button i {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
+            margin: 0;
+            display: block;
         }
         
-
         
         .status-badge {
             position: absolute;
@@ -224,7 +262,7 @@
                 flex-direction: column;
                 gap: 10px;
                 overflow: auto;
-                margin-bottom: 90px;
+                margin-bottom: 90px; /* Space for fixed controls */
                 padding-bottom: 20px;
             }
             
@@ -235,22 +273,10 @@
                 margin-bottom: 10px;
             }
             
-            .controls {
-                padding: 10px;
-                gap: 8px;
-                margin-top: 10px;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                border-radius: 12px 12px 0 0;
-                background-color: rgba(255, 255, 255, 0.95);
-                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            }
+            /* Removed duplicate control styles as they're defined earlier */
             
+            /* Keep only what's different from base styles */
             .controls button {
-                min-width: 70px;
-                padding: 8px;
                 flex-direction: column;
                 font-size: 0.8rem;
             }
@@ -285,16 +311,7 @@
                 box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
             }
             
-            .controls button {
-                width: 60px;
-                height: 60px;
-                min-width: 60px;
-                padding: 0;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
+            /* Removed duplicated button styles */
             
             .controls button span {
                 display: none;
@@ -328,17 +345,74 @@
 
         .video-box.fullscreen {
             position: fixed;
-            top: 60px;
+            top: 0;
             left: 0;
             width: 100% !important;
-            height: calc(100vh - 130px) !important;
-            z-index: 99;
+            height: 100vh !important;
+            z-index: 999;
             border-radius: 0;
+            background-color: #000;
         }
 
+        .video-box.fullscreen .video-participant,
+        .video-box.fullscreen #local-player,
+        .video-box.fullscreen #remote-player,
+        .video-box.fullscreen [id^="remote-player-"] {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover; /* Changed to cover for better fullscreen experience */
+        }
+        
+        /*Fix for iOS Safari to ensure proper height*/
+        @supports (-webkit-touch-callout: none) {
+            .video-box.fullscreen {
+                height: -webkit-fill-available !important;
+            }
+        }
         /* Main container enhancements */
         .main-container {
-            padding-bottom: 50px;
+            padding-bottom: 0; /* Removed padding as it's handled by video-container margin */
+        }
+        
+        /* Enhanced fullscreen controls */
+        .video-box.fullscreen .fullscreen-toggle {
+            top: 15px;
+            right: 15px;
+            width: 35px;
+            height: 35px;
+            font-size: 1rem;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .video-box.fullscreen .status-badge {
+            top: 15px;
+            left: 15px;
+            padding: 5px 12px;
+            font-size: 0.9rem;
+        }
+        
+        /* Video fill toggle button for fullscreen mode */
+        .video-fill-toggle {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            padding: 5px;
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            z-index: 10;
+            width: 35px;
+            height: 35px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .video-box.fullscreen .video-fill-toggle {
+            display: flex;
         }
         
         /* Input field improvements */
@@ -357,514 +431,603 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 8px rgba(13, 110, 253, 0.3);
         }
+
+        /* Z-index ordering */
+        .header {
+            z-index: 100;
+        }
+
+        .controls {
+            z-index: 100;
+        }
+
+        .video-box.fullscreen {
+            z-index: 999;
+        }
+
+        #errorContainer {
+            z-index: 1000;
+        }
+
+        .status-badge, .fullscreen-toggle {
+            z-index: 10;
+        }
     </style>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 
 <body>
-    <div class="header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="m-0">Healthcare Video Consultation</h4>
-            <div class="connection-status">
-                <span id="connection-badge" class="badge bg-success">Connected</span>
-            </div>
-        </div>
-    </div>
-    
     <div class="main-container">
-    
-    <div class="consultation-container" id="consultation-view" style="display:none;">
-        <div class="video-container">
-            <div class="video-box" id="local-video-container">
-                <span class="status-badge">You</span>
-                <div id="local-video" class="video-participant"></div>
-                <button class="fullscreen-toggle" id="local-fullscreen-btn" onclick="toggleLocalFullscreen(event)">
-                    <i class="fas fa-expand"></i>
-                </button>
-            </div>
-            <div class="video-box" id="remote-video-container">
-                <span class="status-badge">Provider</span>
-                <div id="remote-video" class="video-participant"></div>
-                <div id="waiting-message" class="waiting-message">
-                    <i class="fas fa-user-clock fa-2x mb-3"></i>
-                    <h5>Waiting for other participants to join...</h5>
+        <div class="consultation-container" id="consultation-view" style="display:none;">
+            <div class="video-container">
+                <div class="video-box" id="local-video-container">
+                    <span class="status-badge">You</span>
+                    <div id="local-video" class="video-participant"></div>
+                    <button class="fullscreen-toggle" id="local-fullscreen-btn" onclick="toggleLocalFullscreen(event)">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="video-fill-toggle" id="local-fill-toggle" onclick="toggleVideoFill('local')">
+                        <i class="fas fa-compress"></i>
+                    </button>
                 </div>
-                <button class="fullscreen-toggle" id="remote-fullscreen-btn" onclick="toggleRemoteFullscreen(event)">
-                    <i class="fas fa-expand"></i>
-                </button>
+                <div class="video-box" id="remote-video-container">
+                    <span class="status-badge">Provider</span>
+                    <div id="remote-video" class="video-participant"></div>
+                    <div id="waiting-message" class="waiting-message">
+                        <i class="fas fa-user-clock fa-2x mb-3"></i>
+                        <h5>Waiting for other participants to join...</h5>
+                    </div>
+                    <button class="fullscreen-toggle" id="remote-fullscreen-btn" onclick="toggleRemoteFullscreen(event)">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="video-fill-toggle" id="remote-fill-toggle" onclick="toggleVideoFill('remote')">
+                        <i class="fas fa-compress"></i>
+                    </button>
+                </div>
             </div>
-        </div>
-        
-        <div class="controls">
-            <button id="mic-btn" class="btn btn-outline-secondary" onclick="toggleMic()" disabled>
-                <i class="fas fa-microphone"></i> <span>Mute</span>
-            </button>
-            <button id="camera-btn" class="btn btn-outline-secondary" onclick="toggleCamera()" disabled>
-                <i class="fas fa-video"></i> <span>Camera</span>
-            </button>
-            <button id="screen-btn" class="btn btn-outline-secondary" onclick="toggleScreenShare()" disabled>
-                <i class="fas fa-desktop"></i> <span>Share Screen</span>
-            </button>
-            <button id="leave-btn" class="btn btn-danger" onclick="leaveCall()" disabled>
-                <i class="fas fa-phone-slash"></i> <span>End Call</span>
-            </button>
-        </div>
-
-
-    </div>
-    
-    <div class="join-card" id="join-view">
-        <h4 class="mb-4 text-center">Join Video Consultation</h4>
-        <div class="mb-4">
-            <label for="name-input" class="form-label fw-medium">Your Name</label>
-            <input type="text" class="form-control form-control-lg shadow-sm" id="name-input" placeholder="Enter your name">
-        </div>
-        <div class="mb-4">
-            <label class="form-label fw-medium mb-2">Preview</label>
-            <div style="height: 240px; background: #000; border-radius: 12px; margin-bottom: 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" id="preview-container"></div>
-            <div class="d-flex gap-3 justify-content-center my-3">
-                <button class="btn btn-sm btn-outline-secondary p-2" id="preview-mic-btn" onclick="togglePreviewMic()" style="width: 45px; height: 45px; border-radius: 50%;">
+            
+            <div class="controls">
+                <button id="mic-btn" class="btn btn-outline-secondary" onclick="toggleMic()" disabled>
                     <i class="fas fa-microphone"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-secondary p-2" id="preview-camera-btn" onclick="togglePreviewCamera()" style="width: 45px; height: 45px; border-radius: 50%;">
+                <button id="camera-btn" class="btn btn-outline-secondary" onclick="toggleCamera()" disabled>
                     <i class="fas fa-video"></i>
+                </button>
+                <button id="screen-btn" class="btn btn-outline-secondary" onclick="toggleScreenShare()" disabled>
+                    <i class="fas fa-desktop"></i>
+                </button>
+                <button id="leave-btn" class="btn btn-danger" onclick="leaveCall()" disabled>
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+            </div>
+
+
+        </div>
+        
+        <div class="join-card" id="join-view">
+            <h4 class="mb-4 text-center">Join Video Consultation</h4>
+            <div class="mb-4">
+                <label for="name-input" class="form-label fw-medium">Your Name</label>
+                <input type="text" class="form-control form-control-lg shadow-sm" id="name-input" placeholder="Enter your name">
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-medium mb-2">Preview</label>
+                <div style="height: 240px; background: #000; border-radius: 12px; margin-bottom: 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" id="preview-container"></div>
+                <div class="d-flex gap-3 justify-content-center my-3">
+                    <button class="btn btn-sm btn-outline-secondary p-2" id="preview-mic-btn" onclick="togglePreviewMic()" style="width: 45px; height: 45px; border-radius: 50%;">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary p-2" id="preview-camera-btn" onclick="togglePreviewCamera()" style="width: 45px; height: 45px; border-radius: 50%;">
+                        <i class="fas fa-video"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="d-grid mt-4">
+                <button onclick="startCall()" id="join-btn" class="btn btn-primary btn-lg">
+                    <i class="fas fa-phone me-2"></i> Join Consultation
                 </button>
             </div>
         </div>
-        <div class="d-grid mt-4">
-            <button onclick="startCall()" id="join-btn" class="btn btn-primary btn-lg">
-                <i class="fas fa-phone me-2"></i> Join Consultation
-            </button>
+        
+        <!-- Error message container -->
+        <div id="errorContainer">
+            <h3 id="errorTitle" style="margin-bottom: 10px;">Error</h3>
+            <p id="errorMessage">Something went wrong with the video connection.</p>
+            <button onclick="location.reload()" class="btn btn-light mt-3">Retry</button>
         </div>
-    </div>
-    
-    <!-- Error message container -->
-    <div id="errorContainer">
-        <h3 id="errorTitle" style="margin-bottom: 10px;">Error</h3>
-        <p id="errorMessage">Something went wrong with the video connection.</p>
-        <button onclick="location.reload()" class="btn btn-light mt-3">Retry</button>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // These values will be replaced by the server
-        const APP_ID = "YOUR_APP_ID";
-        const CHANNEL = "testChannel";
-        const TOKEN = "YOUR_TOKEN_FROM_BACKEND";
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            // These values will be replaced by the server
+            const APP_ID = "YOUR_APP_ID";
+            const CHANNEL = "testChannel";
+            const TOKEN = "YOUR_TOKEN_FROM_BACKEND";
 
-        const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
-        let localTracks = [];
-        let screenTrack;
-        let remoteUsers = {};
-        
-        let micEnabled = false;
-        let cameraEnabled = false;
-        
-        // Preview variables
-        let previewMicEnabled = false;
-        let previewCameraEnabled = false;
-        let previewTracks = [];
-        
-        // Helper function to display errors
-        function showError(title, message) {
-            const errorContainer = document.getElementById('errorContainer');
-            const errorTitle = document.getElementById('errorTitle');
-            const errorMessage = document.getElementById('errorMessage');
+            const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+            let localTracks = [];
+            let screenTrack;
+            let remoteUsers = {};
             
-            errorTitle.textContent = title;
-            errorMessage.textContent = message;
-            errorContainer.style.display = 'block';
-        }
-        
-        // Initialize preview
-        async function initializePreview() {
-            try {
-                previewTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
-                // Set both tracks disabled by default
-                previewTracks[0].setEnabled(false);
-                previewTracks[1].setEnabled(false);
-                const previewPlayer = document.createElement("div");
-                previewPlayer.id = "preview-player";
-                previewPlayer.style.width = "100%";
-                previewPlayer.style.height = "100%";
-                document.getElementById("preview-container").innerHTML = "";
-                document.getElementById("preview-container").appendChild(previewPlayer);
-                previewTracks[1].play("preview-player");
+            let micEnabled = false;
+            let cameraEnabled = false;
+            
+            // Preview variables
+            let previewMicEnabled = false;
+            let previewCameraEnabled = false;
+            let previewTracks = [];
+            
+            // Variable to track video fill mode
+            let localVideoFill = "cover";
+            let remoteVideoFill = "cover";
+            
+            // Helper function to display errors
+            function showError(title, message) {
+                const errorContainer = document.getElementById('errorContainer');
+                const errorTitle = document.getElementById('errorTitle');
+                const errorMessage = document.getElementById('errorMessage');
                 
-                // Set preview button UI to off state
-                const previewMicBtn = document.getElementById('preview-mic-btn');
-                previewMicBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
-                previewMicBtn.classList.remove('btn-outline-secondary');
-                previewMicBtn.classList.add('btn-danger');
-                const previewCameraBtn = document.getElementById('preview-camera-btn');
-                previewCameraBtn.innerHTML = '<i class="fas fa-video-slash"></i>';
-                previewCameraBtn.classList.remove('btn-outline-secondary');
-                previewCameraBtn.classList.add('btn-danger');
-            } catch (error) {
-                showError("Preview Failed", "Could not access camera or microphone. Please check your permissions.");
+                errorTitle.textContent = title;
+                errorMessage.textContent = message;
+                errorContainer.style.display = 'block';
             }
-        }
-        
-        function togglePreviewMic() {
-            if (previewTracks.length >= 1) {
-                const previewMicBtn = document.getElementById('preview-mic-btn');
-                previewMicEnabled = !previewMicEnabled;
-                previewTracks[0].setEnabled(previewMicEnabled);
-                
-                if (previewMicEnabled) {
-                    previewMicBtn.innerHTML = '<i class="fas fa-microphone"></i>';
-                    previewMicBtn.classList.remove('btn-danger');
-                    previewMicBtn.classList.add('btn-outline-secondary');
-                } else {
+            
+            // Initialize preview
+            async function initializePreview() {
+                try {
+                    previewTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
+                    // Set both tracks disabled by default
+                    previewTracks[0].setEnabled(false);
+                    previewTracks[1].setEnabled(false);
+                    const previewPlayer = document.createElement("div");
+                    previewPlayer.id = "preview-player";
+                    previewPlayer.style.width = "100%";
+                    previewPlayer.style.height = "100%";
+                    document.getElementById("preview-container").innerHTML = "";
+                    document.getElementById("preview-container").appendChild(previewPlayer);
+                    previewTracks[1].play("preview-player");
+                    
+                    // Set preview button UI to off state
+                    const previewMicBtn = document.getElementById('preview-mic-btn');
                     previewMicBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
                     previewMicBtn.classList.remove('btn-outline-secondary');
                     previewMicBtn.classList.add('btn-danger');
-                }
-            }
-        }
-        
-        function togglePreviewCamera() {
-            if (previewTracks.length >= 2) {
-                const previewCameraBtn = document.getElementById('preview-camera-btn');
-                previewCameraEnabled = !previewCameraEnabled;
-                previewTracks[1].setEnabled(previewCameraEnabled);
-                
-                if (previewCameraEnabled) {
-                    previewCameraBtn.innerHTML = '<i class="fas fa-video"></i>';
-                    previewCameraBtn.classList.remove('btn-danger');
-                    previewCameraBtn.classList.add('btn-outline-secondary');
-                } else {
+                    const previewCameraBtn = document.getElementById('preview-camera-btn');
                     previewCameraBtn.innerHTML = '<i class="fas fa-video-slash"></i>';
                     previewCameraBtn.classList.remove('btn-outline-secondary');
                     previewCameraBtn.classList.add('btn-danger');
+                } catch (error) {
+                    showError("Preview Failed", "Could not access camera or microphone. Please check your permissions.");
                 }
             }
-        }
-
-        // Initialize the preview when the page loads
-        window.addEventListener('load', function() {
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                initializePreview();
-            } else {
-                showError("Browser Not Supported", 
-                    "This browser doesn't support video calls. Please try Chrome, Firefox, or Edge.");
-            }
-        });
-
-        async function startCall() {
-            const name = document.getElementById('name-input').value || "Participant";
             
-            // Update the local user label with the entered name
-            document.querySelector('#local-video-container .status-badge').textContent = `${name} (You)`;
-            
-            document.getElementById('join-view').style.display = 'none';
-            document.getElementById('consultation-view').style.display = 'block';
-            
-            document.getElementById('mic-btn').disabled = false;
-            document.getElementById('camera-btn').disabled = false;
-            document.getElementById('screen-btn').disabled = false;
-            document.getElementById('leave-btn').disabled = false;
-            
-            // Close preview tracks
-            if (previewTracks.length) {
-                previewTracks.forEach(track => {
-                    track.stop();
-                    track.close();
-                });
-                previewTracks = [];
-            }
-            
-            try {
-                await client.join(APP_ID, CHANNEL, TOKEN, null);
-                
-                // Set initial mic and camera state based on preview
-                micEnabled = previewMicEnabled;
-                cameraEnabled = previewCameraEnabled;
-                console.log(`Transferring states: mic=${micEnabled}, camera=${cameraEnabled}`);
-                
-                // Create tracks
-                localTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
-                // Set enabled state after creation to match preview state
-                localTracks[0].setEnabled(micEnabled);
-                localTracks[1].setEnabled(cameraEnabled);
-                // Show local video
-                const localPlayer = document.createElement("div");
-                localPlayer.id = "local-player";
-                localPlayer.style.width = "100%";
-                localPlayer.style.height = "100%";
-                document.getElementById("local-video").innerHTML = "";
-                document.getElementById("local-video").appendChild(localPlayer);
-                
-                // Play with a slight delay to ensure DOM is ready (helps on mobile)
-                setTimeout(() => {
-                    localTracks[1].play("local-player");
-                    // Make sure button states are updated again after video plays
-                    updateButtonStates();
-                }, 100);
-                // Publish local tracks
-                await client.publish(localTracks);
-                // Set up user-published event handling
-                client.on("user-published", handleUserPublished);
-                client.on("user-unpublished", handleUserUnpublished);
-                client.on("user-left", handleUserLeft);
-                // Update UI to reflect initial states
-                updateButtonStates();
-                updateWaitingMessage();
-            } catch (error) {
-                showError("Connection Error", 
-                    "Failed to join the consultation. Please check your connection and try again.");
-                document.getElementById('join-view').style.display = 'block';
-                document.getElementById('consultation-view').style.display = 'none';
-            }
-        }
-        
-        async function leaveCall() {
-            if (localTracks.length > 0) {
-                localTracks.forEach(track => {
-                    track.stop();
-                    track.close();
-                });
-            }
-            
-            if (screenTrack) {
-                screenTrack.stop();
-                screenTrack.close();
-                screenTrack = null;
-            }
-            
-            await client.leave();
-            document.getElementById('join-view').style.display = 'block';
-            document.getElementById('consultation-view').style.display = 'none';
-            document.getElementById("local-video").innerHTML = "";
-            document.getElementById("remote-video").innerHTML = "";
-            
-            // Restart preview
-            initializePreview();
-        }
-        
-        async function toggleMic() {
-            if (localTracks.length >= 1) {
-                const audioTrack = localTracks[0];
-                micEnabled = !micEnabled;
-                await audioTrack.setEnabled(micEnabled);
-                updateButtonStates();
-            }
-        }
-        
-        async function toggleCamera() {
-            if (localTracks.length >= 2) {
-                const videoTrack = localTracks[1];
-                cameraEnabled = !cameraEnabled;
-                await videoTrack.setEnabled(cameraEnabled);
-                updateButtonStates();
-            }
-        }
-        
-        async function toggleScreenShare() {
-            if (!screenTrack) {
-                try {
-                    screenTrack = await AgoraRTC.createScreenVideoTrack();
-                    await client.publish(screenTrack);
-                    document.getElementById('screen-btn').innerHTML = '<i class="fas fa-desktop"></i> Stop Sharing';
-                    document.getElementById('screen-btn').classList.remove('btn-outline-secondary');
-                    document.getElementById('screen-btn').classList.add('btn-primary');
-                } catch (error) {
-                    if (error.message === 'Permission denied' || error.message.includes('Permission denied')) {
-                        console.log('Screen sharing permission denied');
+            function togglePreviewMic() {
+                if (previewTracks.length >= 1) {
+                    const previewMicBtn = document.getElementById('preview-mic-btn');
+                    previewMicEnabled = !previewMicEnabled;
+                    previewTracks[0].setEnabled(previewMicEnabled);
+                    
+                    if (previewMicEnabled) {
+                        previewMicBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                        previewMicBtn.classList.remove('btn-danger');
+                        previewMicBtn.classList.add('btn-outline-secondary');
                     } else {
-                        showError("Screen Sharing Failed", "Could not share your screen. Please try again.");
+                        previewMicBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                        previewMicBtn.classList.remove('btn-outline-secondary');
+                        previewMicBtn.classList.add('btn-danger');
                     }
                 }
-            } else {
-                await client.unpublish(screenTrack);
-                screenTrack.stop();
-                screenTrack.close();
-                screenTrack = null;
-                document.getElementById('screen-btn').innerHTML = '<i class="fas fa-desktop"></i> Share Screen';
-                document.getElementById('screen-btn').classList.remove('btn-primary');
-                document.getElementById('screen-btn').classList.add('btn-outline-secondary');
-            }
-        }
-        
-        function updateButtonStates() {
-            console.log(`Updating button states: mic=${micEnabled}, camera=${cameraEnabled}`);
-            
-            // Mic button
-            const micBtn = document.getElementById('mic-btn');
-            if (micEnabled) {
-                micBtn.innerHTML = '<i class="fas fa-microphone"></i> <span>Mute</span>';
-                micBtn.classList.remove('btn-danger');
-                micBtn.classList.add('btn-outline-secondary');
-            } else {
-                micBtn.innerHTML = '<i class="fas fa-microphone-slash"></i> <span>Unmute</span>';
-                micBtn.classList.remove('btn-outline-secondary');
-                micBtn.classList.add('btn-danger');
-            }
-
-            // Camera button
-            const cameraBtn = document.getElementById('camera-btn');
-            if (cameraEnabled) {
-                cameraBtn.innerHTML = '<i class="fas fa-video"></i> <span>Camera</span>';
-                cameraBtn.classList.remove('btn-danger');
-                cameraBtn.classList.add('btn-outline-secondary');
-            } else {
-                cameraBtn.innerHTML = '<i class="fas fa-video-slash"></i> <span>Camera Off</span>';
-                cameraBtn.classList.remove('btn-outline-secondary');
-                cameraBtn.classList.add('btn-danger');
-            }
-
-            // Screen share button
-            const screenBtn = document.getElementById('screen-btn');
-            if (screenTrack) {
-                screenBtn.innerHTML = '<i class="fas fa-desktop"></i> <span>Stop Sharing</span>';
-                screenBtn.classList.remove('btn-outline-secondary');
-                screenBtn.classList.add('btn-primary');
-            } else {
-                screenBtn.innerHTML = '<i class="fas fa-desktop"></i> <span>Share Screen</span>';
-                screenBtn.classList.remove('btn-primary');
-                screenBtn.classList.add('btn-outline-secondary');
-            }
-        }
-
-        function updateWaitingMessage() {
-            const waitingMsg = document.getElementById("waiting-message");
-            if (Object.keys(remoteUsers).length > 0) {
-                waitingMsg.style.display = "none";
-            } else {
-                waitingMsg.style.display = "block";
-            }
-        }
-
-        async function handleUserPublished(user, mediaType) {
-            await client.subscribe(user, mediaType);
-            remoteUsers[user.uid] = user;
-            updateWaitingMessage();
-            
-            // Update remote user label when first remote user connects
-            if (Object.keys(remoteUsers).length === 1) {
-                // Since this is a 1-on-1 call, we know this is the other participant
-                document.querySelector('#remote-video-container .status-badge').textContent = "Other Participant";
             }
             
-            if (mediaType === "video") {
-                // Create a div for remote user
-                const remotePlayer = document.createElement("div");
-                remotePlayer.id = `remote-player-${user.uid}`;
-                remotePlayer.style.width = "100%";
-                remotePlayer.style.height = "100%";
-                document.getElementById("remote-video").appendChild(remotePlayer);
-                // Play with a slight delay to ensure DOM is ready (helps on mobile)
-                setTimeout(() => {
-                    user.videoTrack.play(`remote-player-${user.uid}`);
-                }, 100);
+            function togglePreviewCamera() {
+                if (previewTracks.length >= 2) {
+                    const previewCameraBtn = document.getElementById('preview-camera-btn');
+                    previewCameraEnabled = !previewCameraEnabled;
+                    previewTracks[1].setEnabled(previewCameraEnabled);
+                    
+                    if (previewCameraEnabled) {
+                        previewCameraBtn.innerHTML = '<i class="fas fa-video"></i>';
+                        previewCameraBtn.classList.remove('btn-danger');
+                        previewCameraBtn.classList.add('btn-outline-secondary');
+                    } else {
+                        previewCameraBtn.innerHTML = '<i class="fas fa-video-slash"></i>';
+                        previewCameraBtn.classList.remove('btn-outline-secondary');
+                        previewCameraBtn.classList.add('btn-danger');
+                    }
+                }
             }
 
-            if (mediaType === "audio") {
-                user.audioTrack.play();
-            }
-        }
+            // Initialize the preview when the page loads
+            window.addEventListener('load', function() {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    initializePreview();
+                } else {
+                    showError("Browser Not Supported", 
+                        "This browser doesn't support video calls. Please try Chrome, Firefox, or Edge.");
+                }
+            });
 
-        function handleUserUnpublished(user, mediaType) {
-            if (mediaType === 'video') {
+            async function startCall() {
+                const name = document.getElementById('name-input').value || "Participant";
+                
+                // Update the local user label with the entered name
+                document.querySelector('#local-video-container .status-badge').textContent = `${name} (You)`;
+                
+                document.getElementById('join-view').style.display = 'none';
+                document.getElementById('consultation-view').style.display = 'block';
+                
+                document.getElementById('mic-btn').disabled = false;
+                document.getElementById('camera-btn').disabled = false;
+                document.getElementById('screen-btn').disabled = false;
+                document.getElementById('leave-btn').disabled = false;
+                
+                // Close preview tracks
+                if (previewTracks.length) {
+                    previewTracks.forEach(track => {
+                        track.stop();
+                        track.close();
+                    });
+                    previewTracks = [];
+                }
+                
+                try {
+                    await client.join(APP_ID, CHANNEL, TOKEN, null);
+                    
+                    // Set initial mic and camera state based on preview
+                    micEnabled = previewMicEnabled;
+                    cameraEnabled = previewCameraEnabled;
+                    console.log(`Transferring states: mic=${micEnabled}, camera=${cameraEnabled}`);
+                    
+                    // Create tracks
+                    localTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
+                    // Set enabled state after creation to match preview state
+                    localTracks[0].setEnabled(micEnabled);
+                    localTracks[1].setEnabled(cameraEnabled);
+                    // Show local video
+                    const localPlayer = document.createElement("div");
+                    localPlayer.id = "local-player";
+                    localPlayer.style.width = "100%";
+                    localPlayer.style.height = "100%";
+                    document.getElementById("local-video").innerHTML = "";
+                    document.getElementById("local-video").appendChild(localPlayer);
+                    
+                    // Play with a slight delay to ensure DOM is ready (helps on mobile)
+                    setTimeout(() => {
+                        localTracks[1].play("local-player");
+                        // Make sure button states are updated again after video plays
+                        updateButtonStates();
+                    }, 100);
+                    // Publish local tracks
+                    await client.publish(localTracks);
+                    // Set up user-published event handling
+                    client.on("user-published", handleUserPublished);
+                    client.on("user-unpublished", handleUserUnpublished);
+                    client.on("user-left", handleUserLeft);
+                    // Update UI to reflect initial states
+                    updateButtonStates();
+                    updateWaitingMessage();
+                } catch (error) {
+                    showError("Connection Error", 
+                        "Failed to join the consultation. Please check your connection and try again.");
+                    document.getElementById('join-view').style.display = 'block';
+                    document.getElementById('consultation-view').style.display = 'none';
+                }
+            }
+            
+            async function leaveCall() {
+                if (localTracks.length > 0) {
+                    localTracks.forEach(track => {
+                        track.stop();
+                        track.close();
+                    });
+                }
+                
+                if (screenTrack) {
+                    screenTrack.stop();
+                    screenTrack.close();
+                    screenTrack = null;
+                }
+                
+                await client.leave();
+                document.getElementById('join-view').style.display = 'block';
+                document.getElementById('consultation-view').style.display = 'none';
+                document.getElementById("local-video").innerHTML = "";
+                document.getElementById("remote-video").innerHTML = "";
+                
+                // Restart preview
+                initializePreview();
+            }
+            
+            async function toggleMic() {
+                if (localTracks.length >= 1) {
+                    const audioTrack = localTracks[0];
+                    micEnabled = !micEnabled;
+                    await audioTrack.setEnabled(micEnabled);
+                    updateButtonStates();
+                }
+            }
+            
+            async function toggleCamera() {
+                if (localTracks.length >= 2) {
+                    const videoTrack = localTracks[1];
+                    cameraEnabled = !cameraEnabled;
+                    await videoTrack.setEnabled(cameraEnabled);
+                    updateButtonStates();
+                }
+            }
+            
+            async function toggleScreenShare() {
+                if (!screenTrack) {
+                    try {
+                        screenTrack = await AgoraRTC.createScreenVideoTrack();
+                        await client.publish(screenTrack);
+                        document.getElementById('screen-btn').innerHTML = '<i class="fas fa-desktop"></i>';
+                        document.getElementById('screen-btn').classList.remove('btn-outline-secondary');
+                        document.getElementById('screen-btn').classList.add('btn-primary');
+                    } catch (error) {
+                        if (error.message === 'Permission denied' || error.message.includes('Permission denied')) {
+                            console.log('Screen sharing permission denied');
+                        } else {
+                            showError("Screen Sharing Failed", "Could not share your screen. Please try again.");
+                        }
+                    }
+                } else {
+                    await client.unpublish(screenTrack);
+                    screenTrack.stop();
+                    screenTrack.close();
+                    screenTrack = null;
+                    document.getElementById('screen-btn').innerHTML = '<i class="fas fa-desktop"></i>';
+                    document.getElementById('screen-btn').classList.remove('btn-primary');
+                    document.getElementById('screen-btn').classList.add('btn-outline-secondary');
+                }
+            }
+            
+            function updateButtonStates() {
+                console.log(`Updating button states: mic=${micEnabled}, camera=${cameraEnabled}`);
+                
+                // Mic button
+                const micBtn = document.getElementById('mic-btn');
+                if (micEnabled) {
+                    micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                    micBtn.classList.remove('btn-danger');
+                    micBtn.classList.add('btn-outline-secondary');
+                } else {
+                    micBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                    micBtn.classList.remove('btn-outline-secondary');
+                    micBtn.classList.add('btn-danger');
+                }
+            
+                // Camera button
+                const cameraBtn = document.getElementById('camera-btn');
+                if (cameraEnabled) {
+                    cameraBtn.innerHTML = '<i class="fas fa-video"></i>';
+                    cameraBtn.classList.remove('btn-danger');
+                    cameraBtn.classList.add('btn-outline-secondary');
+                } else {
+                    cameraBtn.innerHTML = '<i class="fas fa-video-slash"></i>';
+                    cameraBtn.classList.remove('btn-outline-secondary');
+                    cameraBtn.classList.add('btn-danger');
+                }
+            
+                // Screen share button
+                const screenBtn = document.getElementById('screen-btn');
+                if (screenTrack) {
+                    screenBtn.innerHTML = '<i class="fas fa-desktop"></i>';
+                    screenBtn.classList.remove('btn-outline-secondary');
+                    screenBtn.classList.add('btn-primary');
+                } else {
+                    screenBtn.innerHTML = '<i class="fas fa-desktop"></i>';
+                    screenBtn.classList.remove('btn-primary');
+                    screenBtn.classList.add('btn-outline-secondary');
+                }
+            }
+
+            function updateWaitingMessage() {
+                const waitingMsg = document.getElementById("waiting-message");
+                if (Object.keys(remoteUsers).length > 0) {
+                    waitingMsg.style.display = "none";
+                } else {
+                    waitingMsg.style.display = "block";
+                }
+            }
+
+            async function handleUserPublished(user, mediaType) {
+                await client.subscribe(user, mediaType);
+                remoteUsers[user.uid] = user;
+                updateWaitingMessage();
+                
+                // Update remote user label when first remote user connects
+                if (Object.keys(remoteUsers).length === 1) {
+                    // Since this is a 1-on-1 call, we know this is the other participant
+                    document.querySelector('#remote-video-container .status-badge').textContent = "Other Participant";
+                }
+                
+                if (mediaType === "video") {
+                    // Create a div for remote user
+                    const remotePlayer = document.createElement("div");
+                    remotePlayer.id = `remote-player-${user.uid}`;
+                    remotePlayer.style.width = "100%";
+                    remotePlayer.style.height = "100%";
+                    document.getElementById("remote-video").appendChild(remotePlayer);
+                    // Play with a slight delay to ensure DOM is ready (helps on mobile)
+                    setTimeout(() => {
+                        user.videoTrack.play(`remote-player-${user.uid}`);
+                    }, 100);
+                }
+
+                if (mediaType === "audio") {
+                    user.audioTrack.play();
+                }
+            }
+
+            function handleUserUnpublished(user, mediaType) {
+                if (mediaType === 'video') {
+                    const playerToRemove = document.getElementById(`remote-player-${user.uid}`);
+                    if (playerToRemove) {
+                        playerToRemove.remove();
+                    }
+                }
+                updateWaitingMessage();
+            }
+            
+            function handleUserLeft(user) {
+                delete remoteUsers[user.uid];
                 const playerToRemove = document.getElementById(`remote-player-${user.uid}`);
                 if (playerToRemove) {
                     playerToRemove.remove();
                 }
+                
+                updateWaitingMessage();
             }
-            updateWaitingMessage();
-        }
-        
-        function handleUserLeft(user) {
-            delete remoteUsers[user.uid];
-            const playerToRemove = document.getElementById(`remote-player-${user.uid}`);
-            if (playerToRemove) {
-                playerToRemove.remove();
-            }
-            
-            updateWaitingMessage();
-        }
 
-        // Fullscreen functionality
-        function toggleLocalFullscreen(event) {
-            event.stopPropagation();
-            const container = document.getElementById('local-video-container');
-            const icon = document.querySelector('#local-fullscreen-btn i');
-            
-            if (container.classList.contains('fullscreen')) {
-                container.classList.remove('fullscreen');
-                icon.className = 'fas fa-expand';
-            } else {
-                container.classList.add('fullscreen');
-                icon.className = 'fas fa-compress';
-            }
-            
-            // Re-play video to fix mobile playback issues
-            if (localTracks && localTracks.length >= 2 && localTracks[1]) {
-                setTimeout(() => {
-                    localTracks[1].play("local-player");
-                }, 100);
-            }
-        }
-        
-        function toggleRemoteFullscreen(event) {
-            event.stopPropagation();
-            const container = document.getElementById('remote-video-container');
-            const icon = document.querySelector('#remote-fullscreen-btn i');
-            
-            if (container.classList.contains('fullscreen')) {
-                container.classList.remove('fullscreen');
-                icon.className = 'fas fa-expand';
-            } else {
-                container.classList.add('fullscreen');
-                icon.className = 'fas fa-compress';
-            }
-            
-            // Re-play video to fix mobile playback issues
-            setTimeout(() => {
-                Object.values(remoteUsers).forEach(user => {
-                    if (user.videoTrack) {
-                        user.videoTrack.play(`remote-player-${user.uid}`);
-                    }
-                });
-            }, 100);
-        }
-
-        // Helper function for mobile browsers
-        function playVideoOnMobileIfNeeded() {
-            // This function helps with video autoplay issues on mobile
-            // Some mobile browsers require user interaction before video can play
-            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                // For local video
-                if (localTracks && localTracks.length >= 2 && localTracks[1]) {
-                    try {
-                        localTracks[1].play("local-player");
-                    } catch (e) {
-                        console.log("Error playing local video:", e);
-                    }
+            //Fullscreen toggle functions
+            function toggleLocalFullscreen(event) {
+                event.stopPropagation();
+                const container = document.getElementById('local-video-container');
+                const icon = document.querySelector('#local-fullscreen-btn i');
+                
+                if (container.classList.contains('fullscreen')) {
+                    container.classList.remove('fullscreen');
+                    icon.className = 'fas fa-expand';
+                    document.body.style.overflow = 'auto'; // Re-enable scrolling
+                } else {
+                    container.classList.add('fullscreen');
+                    icon.className = 'fas fa-compress';
+                    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                    
+                    // Reset video fill to cover for better fullscreen experience
+                    document.querySelectorAll('#local-player').forEach(el => {
+                        el.style.objectFit = 'cover';
+                    });
+                    localVideoFill = 'cover';
+                    document.querySelector('#local-fill-toggle i').className = 'fas fa-compress';
                 }
                 
-                // For remote videos
-                Object.values(remoteUsers).forEach(user => {
-                    if (user.videoTrack) {
+                // Re-play video to fix mobile playback issues and ensure proper sizing
+                if (localTracks && localTracks.length >= 2 && localTracks[1]) {
+                    setTimeout(() => {
+                        // Destroy and recreate the player to fix sizing issues
+                        const localVideo = document.getElementById('local-video');
+                        const player = document.getElementById('local-player');
+                        if (player) {
+                            player.remove();
+                        }
+                        const newPlayer = document.createElement('div');
+                        newPlayer.id = 'local-player';
+                        newPlayer.style.width = '100%';
+                        newPlayer.style.height = '100%';
+                        localVideo.appendChild(newPlayer);
+                        localTracks[1].play('local-player');
+                    }, 100);
+                }
+            }
+            
+            function toggleRemoteFullscreen(event) {
+                event.stopPropagation();
+                const container = document.getElementById('remote-video-container');
+                const icon = document.querySelector('#remote-fullscreen-btn i');
+                
+                if (container.classList.contains('fullscreen')) {
+                    container.classList.remove('fullscreen');
+                    icon.className = 'fas fa-expand';
+                    document.body.style.overflow = 'auto'; // Re-enable scrolling
+                } else {
+                    container.classList.add('fullscreen');
+                    icon.className = 'fas fa-compress';
+                    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                    
+                    // Reset video fill to cover for better fullscreen experience
+                    document.querySelectorAll('[id^="remote-player-"]').forEach(el => {
+                        el.style.objectFit = 'cover';
+                    });
+                    remoteVideoFill = 'cover';
+                    document.querySelector('#remote-fill-toggle i').className = 'fas fa-compress';
+                }
+                
+                // Re-play video to fix mobile playback issues and ensure proper sizing
+                setTimeout(() => {
+                    Object.values(remoteUsers).forEach(user => {
+                        if (user.videoTrack) {
+                            // Destroy and recreate the player to fix sizing issues
+                            const remoteVideo = document.getElementById('remote-video');
+                            const playerId = `remote-player-${user.uid}`;
+                            const player = document.getElementById(playerId);
+                            if (player) {
+                                player.remove();
+                            }
+                            const newPlayer = document.createElement('div');
+                            newPlayer.id = playerId;
+                            newPlayer.style.width = '100%';
+                            newPlayer.style.height = '100%';
+                            remoteVideo.appendChild(newPlayer);
+                            user.videoTrack.play(playerId);
+                        }
+                    });
+                }, 100);
+            }
+
+            // Toggle between cover and contain for better fullscreen control
+            function toggleVideoFill(type) {
+                const selector = type === 'local' ? '#local-player' : '[id^="remote-player-"]';
+                const fillMode = type === 'local' ? localVideoFill : remoteVideoFill;
+                const newFillMode = fillMode === 'cover' ? 'contain' : 'cover';
+                
+                // Update all matching elements
+                document.querySelectorAll(selector).forEach(el => {
+                    el.style.objectFit = newFillMode;
+                });
+                
+                // Update the toggle button icon
+                const toggleBtn = document.getElementById(`${type}-fill-toggle`);
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = newFillMode === 'cover' ? 
+                        '<i class="fas fa-compress"></i>' : 
+                        '<i class="fas fa-expand"></i>';
+                }
+                
+                // Store the new mode
+                if (type === 'local') {
+                    localVideoFill = newFillMode;
+                } else {
+                    remoteVideoFill = newFillMode;
+                }
+            }
+
+            // Helper function for mobile browsers
+            function playVideoOnMobileIfNeeded() {
+                // This function helps with video autoplay issues on mobile
+                // Some mobile browsers require user interaction before video can play
+                if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                    // For local video
+                    if (localTracks && localTracks.length >= 2 && localTracks[1]) {
                         try {
-                            user.videoTrack.play(`remote-player-${user.uid}`);
+                            localTracks[1].play("local-player");
                         } catch (e) {
-                            console.log("Error playing remote video:", e);
+                            console.log("Error playing local video:", e);
                         }
                     }
-                });
+                    
+                    // For remote videos
+                    Object.values(remoteUsers).forEach(user => {
+                        if (user.videoTrack) {
+                            try {
+                                user.videoTrack.play(`remote-player-${user.uid}`);
+                            } catch (e) {
+                                console.log("Error playing remote video:", e);
+                            }
+                        }
+                    });
+                }
             }
-        }
 
-        // Listen for touch events on mobile to help with autoplay
-        document.addEventListener('touchstart', playVideoOnMobileIfNeeded, { once: true });
+            // Listen for touch events on mobile to help with autoplay
+            document.addEventListener('touchstart', playVideoOnMobileIfNeeded, { once: true });
+            
+            // Add orientation change handler to fix video display on mobile rotation
+            window.addEventListener('orientationchange', function() {
+                setTimeout(playVideoOnMobileIfNeeded, 300);
+            });
+        </script>
         
-        // Add orientation change handler to fix video display on mobile rotation
-        window.addEventListener('orientationchange', function() {
-            setTimeout(playVideoOnMobileIfNeeded, 300);
-        });
-    </script>
-    
     </div> <!-- End of main-container -->
 </body>
 
