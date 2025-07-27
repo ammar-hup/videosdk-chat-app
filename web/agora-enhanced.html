@@ -552,7 +552,10 @@
         });
 
         async function startCall() {
-            const name = document.getElementById('name-input').value || "Patient";
+            const name = document.getElementById('name-input').value || "Participant";
+            
+            // Update the local user label with the entered name
+            document.querySelector('#local-video-container .status-badge').textContent = `${name} (You)`;
             
             document.getElementById('join-view').style.display = 'none';
             document.getElementById('consultation-view').style.display = 'block';
@@ -573,16 +576,6 @@
             
             try {
                 await client.join(APP_ID, CHANNEL, TOKEN, null);
-
-                // Add this block to detect already joined users
-                /*client.remoteUsers.forEach(user => {
-                    if (user.hasVideo || user.hasAudio) {
-                        remoteUsers[user.uid] = user;
-                    }
-                });
-                updateWaitingMessage();*/
-
-                
                 
                 // Set initial mic and camera state based on preview
                 micEnabled = previewMicEnabled;
@@ -746,6 +739,12 @@
             await client.subscribe(user, mediaType);
             remoteUsers[user.uid] = user;
             updateWaitingMessage();
+            
+            // Update remote user label when first remote user connects
+            if (Object.keys(remoteUsers).length === 1) {
+                // Since this is a 1-on-1 call, we know this is the other participant
+                document.querySelector('#remote-video-container .status-badge').textContent = "Other Participant";
+            }
             
             if (mediaType === "video") {
                 // Create a div for remote user
