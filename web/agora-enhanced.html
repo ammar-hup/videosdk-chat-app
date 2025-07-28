@@ -40,8 +40,8 @@
         }
         
         .video-container {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-top: 20px;
             flex: 1;
@@ -49,8 +49,8 @@
         }
         
         .video-box {
-            width: calc(50% - 10px);
-            min-width: 300px;
+            min-width: 200px;
+            min-height: 180px;
             height: 350px;
             border-radius: 12px;
             background-color: #000;
@@ -58,6 +58,9 @@
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .video-participant {
@@ -110,15 +113,13 @@
             }
             
             .video-container {
-                flex-direction: column;
+                grid-template-columns: 1fr;
                 gap: 10px;
-                overflow: auto;
                 margin-bottom: 90px; /* Space for fixed controls */
                 padding-bottom: 20px;
             }
             
             .video-box {
-                width: 100% !important;
                 min-width: unset;
                 height: 40vh !important;
                 margin-bottom: 10px;
@@ -224,15 +225,18 @@
         }
         
         .waiting-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(255,255,255,0.9);
-            padding: 20px;
-            border-radius: 8px;
+            position: static;
+            margin: 24px auto 0 auto;
+            background-color: rgba(255,255,255,0.95);
+            padding: 18px 32px;
+            border-radius: 12px;
             text-align: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            font-size: 1.1rem;
+            color: #343a40;
+            max-width: 400px;
+            pointer-events: none;
+            z-index: 1;
         }
         
         .icon-btn {
@@ -440,9 +444,9 @@
 <body>
     <div class="main-container">
         <div class="consultation-container" id="consultation-view" style="display:none;">
-            <div class="video-container">
+            <div class="video-container" id="video-container">
                 <div class="video-box" id="local-video-container">
-                    <span class="status-badge">You</span>
+                    <span class="status-badge" id="local-status-badge">You</span>
                     <div id="local-video" class="video-participant"></div>
                     <button class="fullscreen-toggle" id="local-fullscreen-btn" onclick="toggleLocalFullscreen(event)">
                         <i class="fas fa-expand"></i>
@@ -451,22 +455,8 @@
                         <i class="fas fa-compress"></i>
                     </button>
                 </div>
-                <div class="video-box" id="remote-video-container">
-                    <span class="status-badge">Provider</span>
-                    <div id="remote-video" class="video-participant"></div>
-                    <div id="waiting-message" class="waiting-message">
-                        <i class="fas fa-user-clock fa-2x mb-3"></i>
-                        <h5>Waiting for other participants to join...</h5>
-                    </div>
-                    <button class="fullscreen-toggle" id="remote-fullscreen-btn" onclick="toggleRemoteFullscreen(event)">
-                        <i class="fas fa-expand"></i>
-                    </button>
-                    <button class="video-fill-toggle" id="remote-fill-toggle" onclick="toggleVideoFill('remote')">
-                        <i class="fas fa-compress"></i>
-                    </button>
-                </div>
+                <!-- Remote video boxes will be dynamically added here -->
             </div>
-            
             <div class="controls">
                 <button id="mic-btn" class="btn btn-outline-secondary" onclick="toggleMic()" disabled>
                     <i class="fas fa-microphone"></i>
@@ -481,8 +471,7 @@
                     <i class="fas fa-phone-slash"></i>
                 </button>
             </div>
-
-
+            <div id="waiting-message" class="waiting-message" style="display:none;"></div>
         </div>
         
         <div class="join-card" id="join-view">
@@ -528,19 +517,158 @@
             let localTracks = [];
             let screenTrack;
             let remoteUsers = {};
-            
-            let micEnabled = false;
-            let cameraEnabled = false;
-            
-            // Preview variables
+            let remoteUserNames = {};
             let previewMicEnabled = false;
             let previewCameraEnabled = false;
             let previewTracks = [];
-            
-            // Variable to track video fill mode
-            let localVideoFill = "cover";
-            let remoteVideoFill = "cover";
-            
+            let userName = "";
+
+            function createRemoteVideoBox(uid, name) {
+                const videoContainer = document.getElementById('video-container');
+                if (document.getElementById(`remote-video-container-${uid}`)) return; // Already exists
+                const box = document.createElement('div');
+                box.className = 'video-box';
+                box.id = `remote-video-container-${uid}`;
+                // Status badge
+                const badge = document.createElement('span');
+                badge.className = 'status-badge';
+                badge.textContent = (typeof uid === 'string' && uid !== userName) ? uid : (name ? name : `User ${uid}`);
+                box.appendChild(badge);
+                // Video participant
+                const videoDiv = document.createElement('div');
+                videoDiv.className = 'video-participant';
+                videoDiv.id = `remote-video-${uid}`;
+                box.appendChild(videoDiv);
+                // Waiting message (optional, only for first remote user)
+                // Fullscreen toggle
+                const fsBtn = document.createElement('button');
+                fsBtn.className = 'fullscreen-toggle';
+                fsBtn.onclick = (e) => toggleRemoteFullscreen(e, uid);
+                fsBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                box.appendChild(fsBtn);
+                // Video fill toggle
+                const fillBtn = document.createElement('button');
+                fillBtn.className = 'video-fill-toggle';
+                fillBtn.onclick = () => toggleVideoFill(`remote-${uid}`);
+                fillBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                box.appendChild(fillBtn);
+                videoContainer.appendChild(box);
+            }
+
+            function removeRemoteVideoBox(uid) {
+                const box = document.getElementById(`remote-video-container-${uid}`);
+                if (box) box.remove();
+            }
+
+            // Update handleUserPublished to support multiple participants
+            async function handleUserPublished(user, mediaType) {
+                await client.subscribe(user, mediaType);
+                remoteUsers[user.uid] = user;
+                // Optionally, get user name from user object or assign generic
+                const name = user.nickname || `User ${user.uid}`;
+                remoteUserNames[user.uid] = name;
+                createRemoteVideoBox(user.uid, name);
+                if (mediaType === "video") {
+                    // Play remote video
+                    setTimeout(() => {
+                        user.videoTrack.play(`remote-video-${user.uid}`);
+                    }, 100);
+                }
+                if (mediaType === "audio") {
+                    user.audioTrack.play();
+                }
+                updateWaitingMessage();
+            }
+
+            function handleUserUnpublished(user, mediaType) {
+                if (mediaType === 'video') {
+                    // Remove video element only
+                    const videoDiv = document.getElementById(`remote-video-${user.uid}`);
+                    if (videoDiv) videoDiv.innerHTML = '';
+                }
+            }
+
+            function handleUserLeft(user) {
+                delete remoteUsers[user.uid];
+                removeRemoteVideoBox(user.uid);
+                updateWaitingMessage();
+            }
+
+            // Update toggleRemoteFullscreen and toggleVideoFill to support per-user
+            function toggleRemoteFullscreen(event, uid) {
+                event.stopPropagation();
+                const container = document.getElementById(`remote-video-container-${uid}`);
+                const icon = container.querySelector('.fullscreen-toggle i');
+                if (container.classList.contains('fullscreen')) {
+                    container.classList.remove('fullscreen');
+                    icon.className = 'fas fa-expand';
+                    document.body.style.overflow = 'auto';
+                } else {
+                    container.classList.add('fullscreen');
+                    icon.className = 'fas fa-compress';
+                    document.body.style.overflow = 'hidden';
+                    // Reset video fill to cover
+                    container.querySelectorAll('.video-participant').forEach(el => {
+                        el.style.objectFit = 'cover';
+                    });
+                    container.querySelector('.video-fill-toggle i').className = 'fas fa-compress';
+                }
+                // Re-play video to fix sizing
+                setTimeout(() => {
+                    if (remoteUsers[uid] && remoteUsers[uid].videoTrack) {
+                        const videoDiv = document.getElementById(`remote-video-${uid}`);
+                        videoDiv.innerHTML = '';
+                        const newPlayer = document.createElement('div');
+                        newPlayer.style.width = '100%';
+                        newPlayer.style.height = '100%';
+                        videoDiv.appendChild(newPlayer);
+                        remoteUsers[uid].videoTrack.play(newPlayer);
+                    }
+                }, 100);
+            }
+
+            function toggleVideoFill(type) {
+                let selector, fillMode, newFillMode;
+                if (type === 'local') {
+                    selector = '#local-player';
+                    fillMode = localVideoFill;
+                    newFillMode = fillMode === 'cover' ? 'contain' : 'cover';
+                    document.querySelectorAll(selector).forEach(el => {
+                        el.style.objectFit = newFillMode;
+                    });
+                    const toggleBtn = document.getElementById('local-fill-toggle');
+                    if (toggleBtn) {
+                        toggleBtn.innerHTML = newFillMode === 'cover' ? '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
+                    }
+                    localVideoFill = newFillMode;
+                } else if (type.startsWith('remote-')) {
+                    const uid = type.split('-')[1];
+                    selector = `#remote-video-${uid} > div`;
+                    fillMode = remoteVideoFill;
+                    newFillMode = fillMode === 'cover' ? 'contain' : 'cover';
+                    document.querySelectorAll(selector).forEach(el => {
+                        el.style.objectFit = newFillMode;
+                    });
+                    const toggleBtn = document.querySelector(`#remote-video-container-${uid} .video-fill-toggle`);
+                    if (toggleBtn) {
+                        toggleBtn.innerHTML = newFillMode === 'cover' ? '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
+                    }
+                    remoteVideoFill = newFillMode;
+                }
+            }
+
+            // Update waiting message
+            function updateWaitingMessage() {
+                const videoContainer = document.getElementById('video-container');
+                const waitingMsg = document.getElementById('waiting-message');
+                if (Object.keys(remoteUsers).length === 0) {
+                    waitingMsg.style.display = 'flex';
+                    waitingMsg.innerHTML = '<i class="fas fa-user-clock fa-2x mb-3"></i><h5>Waiting for other participants to join...</h5>';
+                } else {
+                    waitingMsg.style.display = 'none';
+                }
+            }
+
             // Helper function to display errors
             function showError(title, message) {
                 const errorContainer = document.getElementById('errorContainer');
@@ -628,19 +756,19 @@
             });
 
             async function startCall() {
-                const name = document.getElementById('name-input').value || "Participant";
-                
-                // Update the local user label with the entered name
-                document.querySelector('#local-video-container .status-badge').textContent = `${name} (You)`;
-                
+                userName = document.getElementById('name-input').value || "Participant";
+                document.querySelector('#local-video-container .status-badge').textContent = `${userName} (You)`;
                 document.getElementById('join-view').style.display = 'none';
                 document.getElementById('consultation-view').style.display = 'block';
-                
                 document.getElementById('mic-btn').disabled = false;
                 document.getElementById('camera-btn').disabled = false;
                 document.getElementById('screen-btn').disabled = false;
                 document.getElementById('leave-btn').disabled = false;
-                
+                // Remove all remote video boxes
+                document.querySelectorAll('[id^="remote-video-container-"]').forEach(el => el.remove());
+                // Remove waiting message if present
+                const waitingMsg = document.getElementById('waiting-message');
+                if (waitingMsg) waitingMsg.style.display = 'none';
                 // Close preview tracks
                 if (previewTracks.length) {
                     previewTracks.forEach(track => {
@@ -649,10 +777,8 @@
                     });
                     previewTracks = [];
                 }
-                
                 try {
-                    await client.join(APP_ID, CHANNEL, TOKEN, null);
-                    
+                    await client.join(APP_ID, CHANNEL, TOKEN, userName); // Use name as userAccount
                     // Set initial mic and camera state based on preview
                     micEnabled = previewMicEnabled;
                     cameraEnabled = previewCameraEnabled;
@@ -687,8 +813,15 @@
                     updateButtonStates();
                     updateWaitingMessage();
                 } catch (error) {
-                    showError("Connection Error", 
-                        "Failed to join the consultation. Please check your connection and try again.");
+                    let errorMsg = "Failed to join the consultation. Please check your connection and try again.";
+                    if (error && error.message) {
+                        errorMsg += `\nDetails: ${error.message}`;
+                    } else if (typeof error === 'string') {
+                        errorMsg += `\nDetails: ${error}`;
+                    } else if (error && error.toString) {
+                        errorMsg += `\nDetails: ${error.toString()}`;
+                    }
+                    showError("Connection Error", errorMsg.replace(/\n/g, '<br>'));
                     document.getElementById('join-view').style.display = 'block';
                     document.getElementById('consultation-view').style.display = 'none';
                 }
@@ -701,18 +834,20 @@
                         track.close();
                     });
                 }
-                
                 if (screenTrack) {
                     screenTrack.stop();
                     screenTrack.close();
                     screenTrack = null;
                 }
-                
                 await client.leave();
                 document.getElementById('join-view').style.display = 'block';
                 document.getElementById('consultation-view').style.display = 'none';
                 document.getElementById("local-video").innerHTML = "";
-                document.getElementById("remote-video").innerHTML = "";
+                // Remove all remote video boxes
+                document.querySelectorAll('[id^="remote-video-container-"]').forEach(el => el.remove());
+                // Remove waiting message if present
+                const waitingMsg = document.getElementById('waiting-message');
+                if (waitingMsg) waitingMsg.remove();
                 
                 // Restart preview
                 initializePreview();
@@ -802,64 +937,6 @@
                 }
             }
 
-            function updateWaitingMessage() {
-                const waitingMsg = document.getElementById("waiting-message");
-                if (Object.keys(remoteUsers).length > 0) {
-                    waitingMsg.style.display = "none";
-                } else {
-                    waitingMsg.style.display = "block";
-                }
-            }
-
-            async function handleUserPublished(user, mediaType) {
-                await client.subscribe(user, mediaType);
-                remoteUsers[user.uid] = user;
-                updateWaitingMessage();
-                
-                // Update remote user label when first remote user connects
-                if (Object.keys(remoteUsers).length === 1) {
-                    // Since this is a 1-on-1 call, we know this is the other participant
-                    document.querySelector('#remote-video-container .status-badge').textContent = "Other Participant";
-                }
-                
-                if (mediaType === "video") {
-                    // Create a div for remote user
-                    const remotePlayer = document.createElement("div");
-                    remotePlayer.id = `remote-player-${user.uid}`;
-                    remotePlayer.style.width = "100%";
-                    remotePlayer.style.height = "100%";
-                    document.getElementById("remote-video").appendChild(remotePlayer);
-                    // Play with a slight delay to ensure DOM is ready (helps on mobile)
-                    setTimeout(() => {
-                        user.videoTrack.play(`remote-player-${user.uid}`);
-                    }, 100);
-                }
-
-                if (mediaType === "audio") {
-                    user.audioTrack.play();
-                }
-            }
-
-            function handleUserUnpublished(user, mediaType) {
-                if (mediaType === 'video') {
-                    const playerToRemove = document.getElementById(`remote-player-${user.uid}`);
-                    if (playerToRemove) {
-                        playerToRemove.remove();
-                    }
-                }
-                updateWaitingMessage();
-            }
-            
-            function handleUserLeft(user) {
-                delete remoteUsers[user.uid];
-                const playerToRemove = document.getElementById(`remote-player-${user.uid}`);
-                if (playerToRemove) {
-                    playerToRemove.remove();
-                }
-                
-                updateWaitingMessage();
-            }
-
             //Fullscreen toggle functions
             function toggleLocalFullscreen(event) {
                 event.stopPropagation();
@@ -902,10 +979,10 @@
                 }
             }
             
-            function toggleRemoteFullscreen(event) {
+            function toggleRemoteFullscreen(event, uid) {
                 event.stopPropagation();
-                const container = document.getElementById('remote-video-container');
-                const icon = document.querySelector('#remote-fullscreen-btn i');
+                const container = document.getElementById(`remote-video-container-${uid}`);
+                const icon = container.querySelector('.fullscreen-toggle i');
                 
                 if (container.classList.contains('fullscreen')) {
                     container.classList.remove('fullscreen');
