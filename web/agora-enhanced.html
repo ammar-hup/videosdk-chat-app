@@ -331,13 +331,18 @@
 
         .video-box.fullscreen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100% !important;
-            height: 100vh !important;
+            top: 50%;
+            left: 50%;
+            width: 95vw !important;
+            height: 95vh !important;
             z-index: 999;
             border-radius: 0;
             background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transform: translate(-50%, -50%);
         }
 
         .video-box.fullscreen .video-participant,
@@ -451,9 +456,6 @@
                     <button class="fullscreen-toggle" id="local-fullscreen-btn" onclick="toggleLocalFullscreen(event)">
                         <i class="fas fa-expand"></i>
                     </button>
-                    <button class="video-fill-toggle" id="local-fill-toggle" onclick="toggleVideoFill('local')">
-                        <i class="fas fa-compress"></i>
-                    </button>
                 </div>
                 <!-- Remote video boxes will be dynamically added here -->
             </div>
@@ -539,19 +541,12 @@
                 videoDiv.className = 'video-participant';
                 videoDiv.id = `remote-video-${uid}`;
                 box.appendChild(videoDiv);
-                // Waiting message (optional, only for first remote user)
-                // Fullscreen toggle
+                // Fullscreen toggle only
                 const fsBtn = document.createElement('button');
                 fsBtn.className = 'fullscreen-toggle';
                 fsBtn.onclick = (e) => toggleRemoteFullscreen(e, uid);
                 fsBtn.innerHTML = '<i class="fas fa-expand"></i>';
                 box.appendChild(fsBtn);
-                // Video fill toggle
-                const fillBtn = document.createElement('button');
-                fillBtn.className = 'video-fill-toggle';
-                fillBtn.onclick = () => toggleVideoFill(`remote-${uid}`);
-                fillBtn.innerHTML = '<i class="fas fa-compress"></i>';
-                box.appendChild(fillBtn);
                 videoContainer.appendChild(box);
             }
 
@@ -611,7 +606,6 @@
                     container.querySelectorAll('.video-participant').forEach(el => {
                         el.style.objectFit = 'cover';
                     });
-                    container.querySelector('.video-fill-toggle i').className = 'fas fa-compress';
                 }
                 // Re-play video to fix sizing
                 setTimeout(() => {
@@ -625,36 +619,6 @@
                         remoteUsers[uid].videoTrack.play(newPlayer);
                     }
                 }, 100);
-            }
-
-            function toggleVideoFill(type) {
-                let selector, fillMode, newFillMode;
-                if (type === 'local') {
-                    selector = '#local-player';
-                    fillMode = localVideoFill;
-                    newFillMode = fillMode === 'cover' ? 'contain' : 'cover';
-                    document.querySelectorAll(selector).forEach(el => {
-                        el.style.objectFit = newFillMode;
-                    });
-                    const toggleBtn = document.getElementById('local-fill-toggle');
-                    if (toggleBtn) {
-                        toggleBtn.innerHTML = newFillMode === 'cover' ? '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
-                    }
-                    localVideoFill = newFillMode;
-                } else if (type.startsWith('remote-')) {
-                    const uid = type.split('-')[1];
-                    selector = `#remote-video-${uid} > div`;
-                    fillMode = remoteVideoFill;
-                    newFillMode = fillMode === 'cover' ? 'contain' : 'cover';
-                    document.querySelectorAll(selector).forEach(el => {
-                        el.style.objectFit = newFillMode;
-                    });
-                    const toggleBtn = document.querySelector(`#remote-video-container-${uid} .video-fill-toggle`);
-                    if (toggleBtn) {
-                        toggleBtn.innerHTML = newFillMode === 'cover' ? '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
-                    }
-                    remoteVideoFill = newFillMode;
-                }
             }
 
             // Update waiting message
@@ -752,6 +716,15 @@
                 } else {
                     showError("Browser Not Supported", 
                         "This browser doesn't support video calls. Please try Chrome, Firefox, or Edge.");
+                }
+                // Hide or disable screen share button on mobile devices
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const screenBtn = document.getElementById('screen-btn');
+                if (isMobile && screenBtn) {
+                    screenBtn.style.display = 'none'; // Hide the button
+                    // Alternatively, to disable instead of hide:
+                    // screenBtn.disabled = true;
+                    // screenBtn.title = 'Screen sharing is only available on desktop browsers.';
                 }
             });
 
@@ -872,6 +845,12 @@
             }
             
             async function toggleScreenShare() {
+                // Detect mobile browsers (Android/iOS/Opera Mini/BlackBerry)
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile) {
+                    showError("Screen Sharing Not Supported", "Screen sharing is not supported on mobile browsers. Please use a desktop browser to share your screen.");
+                    return;
+                }
                 if (!screenTrack) {
                     try {
                         // Create the screen track
@@ -901,8 +880,10 @@
                     } catch (error) {
                         if (error.message && (error.message === 'Permission denied' || error.message.includes('Permission denied'))) {
                             showError("Screen Sharing Failed", "Screen sharing permission denied by the browser.");
+                        } else if (error.message && error.message.includes('NOT_SUPPORTED')) {
+                            showError("Screen Sharing Not Supported", "Screen sharing is not supported on this browser. Please use a desktop browser to share your screen.");
                         } else {
-                            showError("Screen Sharing Failed", "Could not share your screen. Please try again.<br>" + (error.message || error));
+                            showError("Screen Sharing Failed", "Could not share your screen. Please try again." + (error.message || error));
                         }
                         if (screenTrack) {
                             screenTrack.stop();
@@ -983,13 +964,6 @@
                     container.classList.add('fullscreen');
                     icon.className = 'fas fa-compress';
                     document.body.style.overflow = 'hidden'; // Prevent background scrolling
-                    
-                    // Reset video fill to cover for better fullscreen experience
-                    document.querySelectorAll('#local-player').forEach(el => {
-                        el.style.objectFit = 'cover';
-                    });
-                    localVideoFill = 'cover';
-                    document.querySelector('#local-fill-toggle i').className = 'fas fa-compress';
                 }
                 
                 // Re-play video to fix mobile playback issues and ensure proper sizing
@@ -1024,13 +998,6 @@
                     container.classList.add('fullscreen');
                     icon.className = 'fas fa-compress';
                     document.body.style.overflow = 'hidden'; // Prevent background scrolling
-                    
-                    // Reset video fill to cover for better fullscreen experience
-                    document.querySelectorAll('[id^="remote-player-"]').forEach(el => {
-                        el.style.objectFit = 'cover';
-                    });
-                    remoteVideoFill = 'cover';
-                    document.querySelector('#remote-fill-toggle i').className = 'fas fa-compress';
                 }
                 
                 // Re-play video to fix mobile playback issues and ensure proper sizing
@@ -1053,33 +1020,6 @@
                         }
                     });
                 }, 100);
-            }
-
-            // Toggle between cover and contain for better fullscreen control
-            function toggleVideoFill(type) {
-                const selector = type === 'local' ? '#local-player' : '[id^="remote-player-"]';
-                const fillMode = type === 'local' ? localVideoFill : remoteVideoFill;
-                const newFillMode = fillMode === 'cover' ? 'contain' : 'cover';
-                
-                // Update all matching elements
-                document.querySelectorAll(selector).forEach(el => {
-                    el.style.objectFit = newFillMode;
-                });
-                
-                // Update the toggle button icon
-                const toggleBtn = document.getElementById(`${type}-fill-toggle`);
-                if (toggleBtn) {
-                    toggleBtn.innerHTML = newFillMode === 'cover' ? 
-                        '<i class="fas fa-compress"></i>' : 
-                        '<i class="fas fa-expand"></i>';
-                }
-                
-                // Store the new mode
-                if (type === 'local') {
-                    localVideoFill = newFillMode;
-                } else {
-                    remoteVideoFill = newFillMode;
-                }
             }
 
             // Helper function for mobile browsers
