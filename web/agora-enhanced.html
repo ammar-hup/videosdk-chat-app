@@ -510,7 +510,7 @@
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script>
-            // These values will be replaced by the server
+            // These values will be replaced by the server view
             const APP_ID = "YOUR_APP_ID";
             const CHANNEL = "testChannel";
             const TOKEN = "YOUR_TOKEN_FROM_BACKEND";
@@ -715,16 +715,13 @@
                     initializePreview();
                 } else {
                     showError("Browser Not Supported", 
-                        "This browser doesn't support video calls. Please try Chrome, Firefox, or Edge.");
+                        "This browser doesn't support video calls. Please try another browser.");
                 }
                 // Hide or disable screen share button on mobile devices
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 const screenBtn = document.getElementById('screen-btn');
                 if (isMobile && screenBtn) {
                     screenBtn.style.display = 'none'; // Hide the button
-                    // Alternatively, to disable instead of hide:
-                    // screenBtn.disabled = true;
-                    // screenBtn.title = 'Screen sharing is only available on desktop browsers.';
                 }
             });
 
@@ -787,14 +784,7 @@
                     updateWaitingMessage();
                 } catch (error) {
                     let errorMsg = "Failed to join the consultation. Please check your connection and try again.";
-                    if (error && error.message) {
-                        errorMsg += `\nDetails: ${error.message}`;
-                    } else if (typeof error === 'string') {
-                        errorMsg += `\nDetails: ${error}`;
-                    } else if (error && error.toString) {
-                        errorMsg += `\nDetails: ${error.toString()}`;
-                    }
-                    showError("Connection Error", errorMsg.replace(/\n/g, '<br>'));
+                    showError("Connection Error", errorMsg.toString());
                     document.getElementById('join-view').style.display = 'block';
                     document.getElementById('consultation-view').style.display = 'none';
                 }
@@ -1058,7 +1048,7 @@
             });
         </script>
         
-    </div> <!-- End of main-container -->
+    </div> 
 </body>
 
 </html>
