@@ -474,6 +474,11 @@
                 </button>
             </div>
             <div id="waiting-message" class="waiting-message" style="display:none;"></div>
+            <!-- Add a participant count badge to the top right of the consultation view -->
+            <div class="participant-count-badge" id="participant-count-badge" style="position:absolute;top:18px;right:24px;z-index:200;background:rgba(13,110,253,0.92);color:#fff;padding:7px 18px;border-radius:20px;font-size:1rem;font-weight:500;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:none;align-items:center;gap:8px;">
+                <i class="fas fa-users" style="margin-right:10px;"></i>
+                <span id="participant-count">1</span>
+            </div>
         </div>
         
         <div class="join-card" id="join-view">
@@ -589,6 +594,21 @@
                 updateWaitingMessage();
             }
 
+            // Register event handlers ONCE after join
+            client.on("user-joined", (user) => {
+                // Create remote video box for every user as soon as they join
+                if (!remoteUsers[user.uid]) {
+                    remoteUsers[user.uid] = user;
+                    const name = user.nickname || `User ${user.uid}`;
+                    remoteUserNames[user.uid] = name;
+                    createRemoteVideoBox(user.uid, name);
+                    updateWaitingMessage();
+                }
+            });
+            client.on("user-published", handleUserPublished);
+            client.on("user-unpublished", handleUserUnpublished);
+            client.on("user-left", handleUserLeft);
+
             // Update toggleRemoteFullscreen and toggleVideoFill to support per-user
             function toggleRemoteFullscreen(event, uid) {
                 event.stopPropagation();
@@ -623,13 +643,16 @@
 
             // Update waiting message
             function updateWaitingMessage() {
-                const videoContainer = document.getElementById('video-container');
                 const waitingMsg = document.getElementById('waiting-message');
-                if (Object.keys(remoteUsers).length === 0) {
+                const participantCount = 1 + Object.keys(remoteUsers).length; // 1 for local user
+                const badge = document.getElementById('participant-count-badge');
+                document.getElementById('participant-count').textContent = participantCount;
+                badge.style.display = 'flex';
+                if (participantCount > 1) {
+                    waitingMsg.style.display = 'none';
+                } else {
                     waitingMsg.style.display = 'flex';
                     waitingMsg.innerHTML = '<i class="fas fa-user-clock fa-2x mb-3"></i><h5>Waiting for other participants to join...</h5>';
-                } else {
-                    waitingMsg.style.display = 'none';
                 }
             }
 
@@ -749,16 +772,10 @@
                 }
                 try {
                     await client.join(APP_ID, CHANNEL, TOKEN, userName); // Use name as userAccount
-                    // Set initial mic and camera state based on preview
-                    micEnabled = previewMicEnabled;
-                    cameraEnabled = previewCameraEnabled;
-                    console.log(`Transferring states: mic=${micEnabled}, camera=${cameraEnabled}`);
-                    
-                    // Create tracks
+        
+                    // Always create both tracks
                     localTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
-                    // Set enabled state after creation to match preview state
-                    localTracks[0].setEnabled(micEnabled);
-                    localTracks[1].setEnabled(cameraEnabled);
+        
                     // Show local video
                     const localPlayer = document.createElement("div");
                     localPlayer.id = "local-player";
@@ -766,22 +783,30 @@
                     localPlayer.style.height = "100%";
                     document.getElementById("local-video").innerHTML = "";
                     document.getElementById("local-video").appendChild(localPlayer);
-                    
-                    // Play with a slight delay to ensure DOM is ready (helps on mobile)
+        
                     setTimeout(() => {
                         localTracks[1].play("local-player");
-                        // Make sure button states are updated again after video plays
                         updateButtonStates();
                     }, 100);
-                    // Publish local tracks
+        
+                    // Always publish both tracks (even if muted)
                     await client.publish(localTracks);
-                    // Set up user-published event handling
+        
+                    // Set enabled state: use preview state if available, otherwise default to muted
+                    micEnabled = typeof previewMicEnabled === "boolean" ? previewMicEnabled : false;
+                    cameraEnabled = typeof previewCameraEnabled === "boolean" ? previewCameraEnabled : false;
+                    // Only set enabled state AFTER publishing, to ensure remote users appear in grid
+                    localTracks[0].setEnabled(micEnabled);
+                    localTracks[1].setEnabled(cameraEnabled);
+        
+                    // Set up event handlers
                     client.on("user-published", handleUserPublished);
                     client.on("user-unpublished", handleUserUnpublished);
                     client.on("user-left", handleUserLeft);
-                    // Update UI to reflect initial states
+        
                     updateButtonStates();
                     updateWaitingMessage();
+                    document.getElementById('participant-count-badge').style.display = 'flex';
                 } catch (error) {
                     let errorMsg = "Failed to join the consultation. Please check your connection and try again.";
                     showError("Connection Error", errorMsg.toString());
@@ -811,6 +836,9 @@
                 // Remove waiting message if present
                 const waitingMsg = document.getElementById('waiting-message');
                 if (waitingMsg) waitingMsg.remove();
+                
+                // Hide the participant count badge
+                document.getElementById('participant-count-badge').style.display = 'none';
                 
                 // Restart preview
                 initializePreview();
