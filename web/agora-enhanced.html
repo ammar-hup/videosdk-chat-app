@@ -435,7 +435,10 @@
         <div id="errorContainer">
             <h3 id="errorTitle" style="margin-bottom: 10px;">Error</h3>
             <p id="errorMessage">Something went wrong with the video connection.</p>
-            <button onclick="location.reload()" class="btn btn-light mt-3">Retry</button>
+            <div class="d-flex justify-content-center gap-2 mt-3">
+                <button id="errorRetryBtn" class="btn btn-primary">Retry</button>
+                <button id="errorCancelBtn" class="btn btn-light">Cancel</button>
+            </div>
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -515,15 +518,27 @@
                 replayVideo(isLocal, uid);
             }
 
-            function showError(title, message) {
+            let lastErrorAction = null;
+            
+            function showError(title, message, retryAction = null) {
                 const errorContainer = document.getElementById('errorContainer');
                 const errorTitle = document.getElementById('errorTitle');
                 const errorMessage = document.getElementById('errorMessage');
-                
                 errorTitle.textContent = title;
                 errorMessage.textContent = message;
                 errorContainer.style.display = 'block';
+                lastErrorAction = retryAction;
             }
+            
+            // Error dialog button handlers
+            document.getElementById('errorRetryBtn').onclick = function() {
+                document.getElementById('errorContainer').style.display = 'none';
+                if (typeof lastErrorAction === 'function') lastErrorAction();
+            };
+            document.getElementById('errorCancelBtn').onclick = function() {
+                document.getElementById('errorContainer').style.display = 'none';
+                lastErrorAction = null;
+            };
 
             // Remote User Management
             function createRemoteVideoBox(uid, name) {
@@ -536,7 +551,7 @@
                 
                 const badge = document.createElement('span');
                 badge.className = 'status-badge';
-                badge.textContent = name || `User ${uid}`;
+                badge.textContent = name || `${uid}`;
                 box.appendChild(badge);
                 
                 const videoDiv = document.createElement('div');
@@ -610,7 +625,7 @@
             client.on("user-joined", (user) => {
                 if (!remoteUsers[user.uid]) {
                     remoteUsers[user.uid] = user;
-                    const name = user.nickname || `User ${user.uid}`;
+                    const name = user.nickname || `${user.uid}`;
                     createRemoteVideoBox(user.uid, name);
                     updateWaitingMessage();
                 }
@@ -787,9 +802,17 @@
                         });
                     } catch (error) {
                         if (error.message && error.message.includes('Permission denied')) {
-                            showError("Screen Sharing Failed", "Screen sharing permission denied by the browser.");
+                            showError(
+                                "Screen Sharing Failed",
+                                "Screen sharing permission denied by the browser.",
+                                toggleScreenShare // Pass the function to retry
+                            );
                         } else {
-                            showError("Screen Sharing Failed", "Could not share your screen. Please try again.");
+                            showError(
+                                "Screen Sharing Failed",
+                                "Could not share your screen. Please try again.",
+                                toggleScreenShare
+                            );
                         }
                         
                         if (screenTrack) {
