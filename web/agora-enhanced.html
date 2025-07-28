@@ -874,23 +874,55 @@
             async function toggleScreenShare() {
                 if (!screenTrack) {
                     try {
+                        // Create the screen track
                         screenTrack = await AgoraRTC.createScreenVideoTrack();
+                        // Unpublish camera video if present
+                        if (localTracks[1]) {
+                            await client.unpublish(localTracks[1]);
+                        }
                         await client.publish(screenTrack);
                         document.getElementById('screen-btn').innerHTML = '<i class="fas fa-desktop"></i>';
                         document.getElementById('screen-btn').classList.remove('btn-outline-secondary');
                         document.getElementById('screen-btn').classList.add('btn-primary');
+                        // Listen for screen sharing end
+                        screenTrack.on('track-ended', async () => {
+                            await client.unpublish(screenTrack);
+                            screenTrack.stop();
+                            screenTrack.close();
+                            screenTrack = null;
+                            // Re-publish camera video if enabled
+                            if (localTracks[1] && cameraEnabled) {
+                                await client.publish(localTracks[1]);
+                            }
+                            document.getElementById('screen-btn').innerHTML = '<i class="fas fa-desktop"></i>';
+                            document.getElementById('screen-btn').classList.remove('btn-primary');
+                            document.getElementById('screen-btn').classList.add('btn-outline-secondary');
+                        });
                     } catch (error) {
-                        if (error.message === 'Permission denied' || error.message.includes('Permission denied')) {
-                            console.log('Screen sharing permission denied');
+                        if (error.message && (error.message === 'Permission denied' || error.message.includes('Permission denied'))) {
+                            showError("Screen Sharing Failed", "Screen sharing permission denied by the browser.");
                         } else {
-                            showError("Screen Sharing Failed", "Could not share your screen. Please try again.");
+                            showError("Screen Sharing Failed", "Could not share your screen. Please try again.<br>" + (error.message || error));
                         }
+                        if (screenTrack) {
+                            screenTrack.stop();
+                            screenTrack.close();
+                            screenTrack = null;
+                        }
+                        document.getElementById('screen-btn').innerHTML = '<i class="fas fa-desktop"></i>';
+                        document.getElementById('screen-btn').classList.remove('btn-primary');
+                        document.getElementById('screen-btn').classList.add('btn-outline-secondary');
                     }
                 } else {
+                    // Stop screen sharing
                     await client.unpublish(screenTrack);
                     screenTrack.stop();
                     screenTrack.close();
                     screenTrack = null;
+                    // Re-publish camera video if enabled
+                    if (localTracks[1] && cameraEnabled) {
+                        await client.publish(localTracks[1]);
+                    }
                     document.getElementById('screen-btn').innerHTML = '<i class="fas fa-desktop"></i>';
                     document.getElementById('screen-btn').classList.remove('btn-primary');
                     document.getElementById('screen-btn').classList.add('btn-outline-secondary');
