@@ -94,8 +94,37 @@
             transition: all 0.2s ease;
         }
         
-        /* Only override what's needed for medium screens */
+        /* Consolidated media query */
         @media (max-width: 768px) {
+            /* General layout for medium screens */
+            body {
+                /* Allow scrolling but only when needed */
+                overflow-y: auto;
+            }
+            
+            .consultation-container {
+                min-height: calc(100vh - 60px);
+                padding: 0.5rem;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .video-container {
+                flex-direction: column;
+                gap: 10px;
+                overflow: auto;
+                margin-bottom: 90px; /* Space for fixed controls */
+                padding-bottom: 20px;
+            }
+            
+            .video-box {
+                width: 100% !important;
+                min-width: unset;
+                height: 40vh !important;
+                margin-bottom: 10px;
+            }
+            
+            /* Controls for medium screens */
             .controls {
                 padding: 10px;
                 gap: 8px;
@@ -109,25 +138,34 @@
                 box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             }
             
+            .controls button {
+                flex-direction: column;
+                font-size: 0.8rem;
+            }
+            
             .controls button i {
                 font-size: 1.5rem;
+                margin-bottom: 5px;
+            }
+            
+            /* Join page adjustments */
+            .join-card {
+                margin: 20px auto;
+                padding: 25px 20px;
+                width: 92%;
+                max-width: 400px;
+                border-radius: 12px;
+            }
+            
+            .header h3 {
+                font-size: 1.2rem;
+            }
+            
+            #preview-container {
+                height: 150px !important;
             }
         }
         
-        /* Only override what's needed for small screens */
-        @media (max-width: 480px) {
-            .controls {
-                padding: 15px 10px 25px;
-                justify-content: space-around;
-                background-color: rgba(255, 255, 255, 0.98);
-                box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
-            }
-            
-            .controls button span {
-                display: none;
-            }
-        }
-
         .controls button.btn-danger {
             background: #dc3545;
             color: #fff;
@@ -153,7 +191,6 @@
             margin: 0;
             display: block;
         }
-        
         
         .status-badge {
             position: absolute;
@@ -244,66 +281,9 @@
             z-index: 1000;
         }
         
-        /* Responsive styles */
-        @media (max-width: 768px) {
-            body {
-                /* Allow scrolling but only when needed */
-                overflow-y: auto;
-            }
-            
-            .consultation-container {
-                min-height: calc(100vh - 60px);
-                padding: 0.5rem;
-                display: flex;
-                flex-direction: column;
-            }
-            
-            .video-container {
-                flex-direction: column;
-                gap: 10px;
-                overflow: auto;
-                margin-bottom: 90px; /* Space for fixed controls */
-                padding-bottom: 20px;
-            }
-            
-            .video-box {
-                width: 100% !important;
-                min-width: unset;
-                height: 40vh !important;
-                margin-bottom: 10px;
-            }
-            
-            /* Removed duplicate control styles as they're defined earlier */
-            
-            /* Keep only what's different from base styles */
-            .controls button {
-                flex-direction: column;
-                font-size: 0.8rem;
-            }
-            
-            .controls button i {
-                font-size: 1.5rem;
-                margin-bottom: 5px;
-            }
-            
-            .join-card {
-                margin: 20px auto;
-                padding: 25px 20px;
-                width: 92%;
-                max-width: 400px;
-                border-radius: 12px;
-            }
-            
-            .header h3 {
-                font-size: 1.2rem;
-            }
-            
-            #preview-container {
-                height: 150px !important;
-            }
-        }
-        
+        /* Consolidated styles for small screens (mobile phones) */
         @media (max-width: 480px) {
+            /* Control panel styles */
             .controls {
                 padding: 15px 10px 25px;
                 justify-content: space-around;
@@ -311,18 +291,18 @@
                 box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
             }
             
-            /* Removed duplicated button styles */
-            
             .controls button span {
                 display: none;
             }
             
+            /* Enhance button icons for better touch targets */
             .controls button i {
                 font-size: 1.5rem;
-                margin: 0;
+                margin: 0; /* Override the margin-bottom from medium screens */
                 display: block;
             }
             
+            /* Smaller header for mobile */
             .header {
                 padding: 0.7rem;
             }
@@ -331,11 +311,13 @@
                 font-size: 1rem;
             }
             
+            /* Adjust status badge size */
             .status-badge {
                 font-size: 0.7rem;
                 padding: 3px 8px;
             }
             
+            /* Smaller fullscreen toggle button */
             .fullscreen-toggle {
                 width: 25px;
                 height: 25px;
@@ -369,6 +351,7 @@
                 height: -webkit-fill-available !important;
             }
         }
+        
         /* Main container enhancements */
         .main-container {
             padding-bottom: 0; /* Removed padding as it's handled by video-container margin */
@@ -415,13 +398,11 @@
             display: flex;
         }
         
-        /* Input field improvements */
         .form-control:focus {
             border-color: #0d6efd;
             box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
         }
         
-        /* Join button improvement */
         #join-btn {
             transition: all 0.3s ease;
             box-shadow: 0 4px 6px rgba(13, 110, 253, 0.2);
