@@ -1,6 +1,14 @@
-# 🎥 VideoSDK Python & Web Chat Application
+# 🎥 Trying to make a Video chat application using 2 different API services: Agora & videosdk 
+
+## 1- Agora: Python & building self JS UI
+
+
+
+
+## 2- VideoSDK: Python & JS prebuilt UI
 
 A comprehensive video chat application built with VideoSDK, featuring both Python and web interfaces for real-time video communication.
+
 
 ![VideoSDK Chat](https://img.shields.io/badge/VideoSDK-Video%20Chat-blue)
 ![Python](https://img.shields.io/badge/Python-3.12+-green)
